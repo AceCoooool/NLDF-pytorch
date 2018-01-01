@@ -1,5 +1,7 @@
 # NLFD
-An unofficial implementation of [Non-Local Deep Features for Salient Object Detection](https://sites.google.com/view/zhimingluo/nldf).（unfinished）
+[中文说明](./README.zh.md)
+
+An unofficial implementation of [Non-Local Deep Features for Salient Object Detection](https://sites.google.com/view/zhimingluo/nldf).
 
 <p align="center"><img width="100%" src="png/example.png" /></p>
 
@@ -30,7 +32,11 @@ cd NLFD-Pytorch/
 
 Note: the original paper use other datasets.
 
-Download the [ECSSD](http://www.cse.cuhk.edu.hk/leojia/projects/hsaliency/dataset.html) dataset.  (add download.sh soon)
+Download the [ECSSD](http://www.cse.cuhk.edu.hk/leojia/projects/hsaliency/dataset.html) dataset.  
+
+```shell
+bash download.sh
+```
 
 ### 3. Get pre-trained vgg
 
@@ -51,7 +57,15 @@ Note:
 1. `--val=True` add the validation (but your need to add the `--val_path` and `--val_label`)
 2. `you_data, you_label` means your training data root. (connect to the step 2)
 
-### 5. Test
+### 5. Demo
+
+```shell
+python demo.py --demo_img='your_picture' --trained_model='pre_trained pth' --cuda=True
+```
+
+Note: `trained_model` is the `.pth` from the step 4 
+
+### 6. Test
 
 ```shell
 python main.py --mode='test', --test_path='you_data' --test_label='your_label' --batch_size=1 --model='your_trained_model'

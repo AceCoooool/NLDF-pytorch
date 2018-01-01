@@ -35,6 +35,7 @@ class Loss(nn.Module):
         label_grad = torch.gt(self.gradlayer(label), self.cth).float()
         inter = torch.sum(prob_grad * label_grad)
         union = torch.pow(prob_grad, 2).sum() + torch.pow(label_grad, 2).sum()
+        # TODO: will cause inf ?
         # union = prob_grad.sum() + label_grad.sum()
         boundary_loss = (1 - 2 * (inter + 1) / (union + 1)) if inter.data[0] > 0 else 0
         sailency_loss = F.binary_cross_entropy(x, label)

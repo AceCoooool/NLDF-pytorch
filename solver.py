@@ -77,7 +77,7 @@ class Solver(object):
         self.net.eval()
         for i, data_batch in enumerate(self.val_loader):
             images, labels = data_batch
-            images, labels = Variable(images), Variable(labels)
+            images, labels = Variable(images, volatile=True), Variable(labels, volatile=True)
             if self.config.cuda:
                 images, labels = images.cuda(), labels.cuda()
             prob_pred = self.net(images)
@@ -86,31 +86,32 @@ class Solver(object):
         return avg_mae / len(self.val_loader)
 
     def test(self):
-        avg_mae = 0.0
+        avg_mae, avg_fmeasure = 0.0, 0.0
         for i, data_batch in enumerate(self.test_loader):
             images, labels = data_batch
-            images, labels = Variable(images, requires_grad=False), Variable(labels, requires_grad=False)
+            images, labels = Variable(images, volatile=True), Variable(labels, volatile=True)
             if self.config.cuda:
                 images, labels = images.cuda(), labels.cuda()
             prob_pred = F.upsample(self.net(images), scale_factor=2, mode='bilinear')
             mae = self.eval_mae(prob_pred, labels).cpu().data[0]
-            print("[%d] psnr: %.2f" % (i, mae))
-            print("[%d] psnr: %.2f" % (i, mae), file=self.test_output)
+            fmeasure = self.eval_fmeasure(prob_pred, labels).cpu().data[0]
+            print("[%d] mae: %.2f, fmeasure: %.2f" % (i, mae, fmeasure))
+            print("[%d] mae: %.2f, fmeasure: %.2f" % (i, mae, fmeasure), file=self.test_output)
             avg_mae += mae
-        avg_mae /= len(self.test_loader)
-        print('average psnr: %.2f' % avg_mae)
-        print('average psnr: %.2f' % avg_mae, file=self.test_output)
+            avg_fmeasure += fmeasure
+        avg_mae, avg_fmeasure = avg_mae / len(self.test_loader), avg_fmeasure / len(self.test_loader)
+        print('average mae: %.2f, average fmeasure: %.2f' % (avg_mae, avg_fmeasure))
+        print('average mae: %.2f, average fmeasure: %.2f' % (avg_mae, avg_fmeasure), file=self.test_output)
 
     def train(self):
         x = torch.FloatTensor(self.config.batch_size, self.config.n_color, self.config.img_size, self.config.img_size)
         y = torch.FloatTensor(self.config.batch_size, self.config.n_color, self.config.img_size, self.config.img_size)
         if self.config.cuda:
             cudnn.benchmark = True
-            x = x.cuda()
-            y = y.cuda()
-        x = Variable(x)
-        y = Variable(y)
+            x, y = x.cuda(), y.cuda()
+        x, y = Variable(x), Variable(y)
         iter_num = len(self.train_loader.dataset) // self.config.batch_size
+        best_mae = 1.0 if self.config.val else None
         for epoch in range(self.config.epoch):
             loss_epoch = 0
             for i, data_batch in enumerate(self.train_loader):
@@ -143,6 +144,13 @@ class Solver(object):
                     img = OrderedDict([('origin', self.mean + images.cpu()[0]), ('label', labels.cpu()[0][0]),
                                        ('pred_label', y_pred.cpu().data[0][0])])
                     self.visual.plot_current_img(img)
+            if self.config.val and (epoch + 1) % self.config.epoch_val == 0:
+                mae = self.validation()
+                print('--- Best MAE: %.4f, Curr MAE: %.4f ---' % (best_mae, mae))
+                print('--- Best MAE: %.4f, Curr MAE: %.4f ---' % (best_mae, mae), file=self.log_output)
+                if best_mae > mae:
+                    best_mae = mae
+                    torch.save(self.net.state_dict(), '%s/models/best.pth' % self.config.save_fold)
             if (epoch + 1) % self.config.epoch_save == 0:
                 torch.save(self.net.state_dict(), '%s/models/epoch_%d.pth' % (self.config.save_fold, epoch + 1))
         torch.save(self.net.state_dict(), '%s/models/final.pth' % self.config.save_fold)
