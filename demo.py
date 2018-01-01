@@ -25,7 +25,7 @@ def demo(model_path, img_path, cuda):
 
 
 if __name__ == '__main__':
-    model_path = './weights/final.pth'
+    model_path = './weights/best.pth'
     img_path = './png/demo.jpg'
     parser = argparse.ArgumentParser()
 

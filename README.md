@@ -71,5 +71,15 @@ Note: `trained_model` is the `.pth` from the step 4
 python main.py --mode='test', --test_path='you_data' --test_label='your_label' --batch_size=1 --model='your_trained_model'
 ```
 
-Note: not verify, will finish soon.
+Note: It's a scale version (image and label is resized) of test.
 
+### 7. Pre-trained
+
+A nearly 400 epoch trained model can be download: [pretrained model](https://drive.google.com/file/d/17ZpXi9YKTgPeNepvohNyPfnALYhXsC2d/view?usp=sharing)
+
+## Bug
+
+1. Error of `inf` when the learning rate is large.
+2. The IOU Loss is not precision.
+
+Maybe, it is better to add Batch Normalization. 

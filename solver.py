@@ -128,6 +128,7 @@ class Solver(object):
                 loss = iou_loss + sail_loss
                 loss.backward()
                 utils.clip_grad_norm(self.net.parameters(), self.config.clip_gradient)
+                utils.clip_grad_norm(self.loss.parameters(), self.config.clip_gradient)
                 self.optimizer.step()
                 loss_epoch += loss.cpu().data[0]
                 print('epoch: [%d/%d], iter: [%d/%d], loss: [%.4f]' % (

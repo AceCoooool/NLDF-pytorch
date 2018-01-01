@@ -59,11 +59,22 @@ python main.py --mode='train' --train_path='you_data' --label_path='you_label' -
 1. `--val=True`：训练阶段开启validation. 你可以将部分训练集作为验证集。同时提供验证集的路径
 2. `you_data, you_label` ：关于第2步中数据集的路径
 
-### 5. 测试
+### 5. 示例
+
+```shell
+python demo.py --demo_img='your_picture' --trained_model='pre_trained pth' --cuda=True
+```
+
+注：这里采用的`pre_trained.pth`来自第4步训练好的模型
+
+### 6. 测试
 
 ```shell
 python main.py --mode='test', --test_path='you_data' --test_label='your_label' --batch_size=1 --model='your_trained_model'
 ```
 
-注：未完成。
+注：目前提供的版本不是标准的测试方式（采用了缩放后的图片和标签），以及max f-measure存在问题
 
+## 训练好的模型
+
+下述仅给出一个迭代了较多轮的结果：[pretrained_model](https://drive.google.com/file/d/17ZpXi9YKTgPeNepvohNyPfnALYhXsC2d/view?usp=sharing)
