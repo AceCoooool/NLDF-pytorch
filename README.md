@@ -11,7 +11,7 @@ Some thing difference:
 
 1. dataset
 2. score with one channel, rather than two channels
-3. two version of IOU: area-IOU and boundary-IOU (area-IOU is better) (will add a combine version)
+3. Dice IOU: boundary version and area version
 
 ## Prerequisites
 
@@ -61,12 +61,12 @@ Note:
 ### 5. Train
 
 ```shell
-python main.py --mode='train' --train_path='you_data' --label_path='you_label' --batch_size=8 --visdom=True --space=True
+python main.py --mode='train' --train_path='you_data' --label_path='you_label' --batch_size=8 --visdom=True --area=True
 ```
 
 Note:
 
-1. `--space=True` choose the Space-IOU. `false` choose the Boundary-IOU
+1. `--area=True, --boundary=True` area and boundary Dice IOU (default: `--area=True --boundary=False`)
 2. `--val=True` add the validation (but your need to add the `--val_path` and `--val_label`)
 3. `you_data, you_label` means your training data root. (connect to the step 2)
 
@@ -80,7 +80,6 @@ Note: It's a scale version (image and label is resized) of test.
 
 ## Bug
 
-1. Error of `inf` when the learning rate is large.
-2. The Boundary-IOU is not precision.
+1. The boundary Dice IOU may cause `inf`，it is better to use area Dice IOU.
 
 Maybe, it is better to add Batch Normalization. 

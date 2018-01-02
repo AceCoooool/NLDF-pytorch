@@ -11,7 +11,7 @@
 
 1. 数据集（个人没找到MSRA-B的图片）
 2. 网络结构上的一些不同：此处采用最后输出为单个概率图，官方版本中是两个互异的概率图
-3. 增加了“面积重合率”，原论文中是“边缘重合率”（后续会实验两者结合的情况）
+3. 增加了“面积重合率”，原论文中是“边缘重合率” （提高了参数可同时选择两者）
 
 ## 依赖库
 
@@ -63,14 +63,14 @@ python demo.py --demo_img='your_picture' --trained_model='pre_trained pth' --cud
 ### 5. 训练
 
 ```shell
-python main.py --mode='train' --train_path='you_data' --label_path='you_label' --batch_size=8 --visdom=True --space=True
+python main.py --mode='train' --train_path='you_data' --label_path='you_label' --batch_size=8 --visdom=True --area=True --boundary=False
 ```
 
 注：
 
 1. `--val=True`：训练阶段开启validation. 你可以将部分训练集作为验证集。同时提供验证集的路径
 2. `you_data, you_label` ：关于第2步中数据集的路径
-3. `--space`：选择area-IOU或者boundary-IOU
+3. `--area --boundary`：选择area-IOU或者boundary-IOU，或者两者均选择（体现在损失函数里面`loss.py`，建议采用默认的形式---只选择 area=True）
 
 ### 6. 测试
 
@@ -82,9 +82,8 @@ python main.py --mode='test', --test_path='you_data' --test_label='your_label' -
 
 ## Bug
 
-1. 如果采用boundary-iou容易出现`inf`的情况：需要将学习率调整到很小，如`1e-10`
+1. 采用boundary-iou容易出现`inf`的情况：需要将学习率调整到很小，如`1e-10`
 2. 可能还存在数值问题
-3. GradLayer层可能还存在bug
 
 
 

@@ -1,11 +1,11 @@
-from collections import OrderedDict
 import torch
+from collections import OrderedDict
 from torch.nn import utils, functional as F
 from torch.optim import Adam
 from torch.autograd import Variable
 from torch.backends import cudnn
 from nlfd import build_model, weights_init
-from loss import build_loss
+from loss import Loss
 from tools.visual import Viz_visdom
 
 
@@ -38,7 +38,7 @@ class Solver(object):
 
     def build_model(self):
         self.net = build_model()
-        if self.config.mode == 'train': self.loss = build_loss(self.config.space)
+        if self.config.mode == 'train': self.loss = Loss(self.config.area, self.config.boundary)
         if self.config.cuda: self.net = self.net.cuda()
         if self.config.cuda and self.config.mode == 'train': self.loss = self.loss.cuda()
         self.net.train()
@@ -51,6 +51,9 @@ class Solver(object):
     def update_lr(self, lr):
         for param_group in self.optimizer.param_groups:
             param_group['lr'] = lr
+
+    def clip(self, y):
+        return torch.clamp(y, 0.0, 1.0)
 
     def eval_mae(self, y_pred, y):
         return torch.abs(y_pred - y).mean()
@@ -92,13 +95,13 @@ class Solver(object):
             prob_pred = F.upsample(self.net(images), scale_factor=2, mode='bilinear')
             mae = self.eval_mae(prob_pred, labels).cpu().data[0]
             fmeasure = self.eval_fmeasure(prob_pred, labels).cpu().data[0]
-            print("[%d] mae: %.2f, fmeasure: %.2f" % (i, mae, fmeasure))
-            print("[%d] mae: %.2f, fmeasure: %.2f" % (i, mae, fmeasure), file=self.test_output)
+            print("[%d] mae: %.4f, fmeasure: %.2f" % (i, mae, fmeasure))
+            print("[%d] mae: %.4f, fmeasure: %.2f" % (i, mae, fmeasure), file=self.test_output)
             avg_mae += mae
             avg_fmeasure += fmeasure
         avg_mae, avg_fmeasure = avg_mae / len(self.test_loader), avg_fmeasure / len(self.test_loader)
-        print('average mae: %.2f, average fmeasure: %.2f' % (avg_mae, avg_fmeasure))
-        print('average mae: %.2f, average fmeasure: %.2f' % (avg_mae, avg_fmeasure), file=self.test_output)
+        print('average mae: %.4f, average fmeasure: %.2f' % (avg_mae, avg_fmeasure))
+        print('average mae: %.4f, average fmeasure: %.2f' % (avg_mae, avg_fmeasure), file=self.test_output)
 
     def train(self):
         x = torch.FloatTensor(self.config.batch_size, self.config.n_color, self.config.img_size, self.config.img_size)
@@ -121,8 +124,7 @@ class Solver(object):
                 y.data.resize_as_(labels).copy_(labels)
                 y_pred = self.net(x)
                 self.eval_fmeasure(y_pred, y)
-                iou_loss, sail_loss = self.loss(y_pred, y)
-                loss = iou_loss + sail_loss
+                loss = self.loss(y_pred, y)
                 loss.backward()
                 utils.clip_grad_norm(self.net.parameters(), self.config.clip_gradient)
                 self.optimizer.step()

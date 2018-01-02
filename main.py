@@ -68,7 +68,8 @@ if __name__ == '__main__':
     parser.add_argument('--epoch_save', type=int, default=20)
     parser.add_argument('--epoch_show', type=int, default=1)
     parser.add_argument('--pre_trained', type=str, default=None)
-    parser.add_argument('--space', type=bool, default=True)
+    parser.add_argument('--area', type=bool, default=True)
+    parser.add_argument('--boundary', type=bool, default=False)
 
     # Testing settings
     parser.add_argument('--test_path', type=str, default=test_path)
