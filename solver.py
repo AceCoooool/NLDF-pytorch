@@ -5,7 +5,7 @@ from torch.optim import Adam
 from torch.autograd import Variable
 from torch.backends import cudnn
 from nlfd import build_model, weights_init
-from loss import Loss
+from loss import build_loss
 from tools.visual import Viz_visdom
 
 
@@ -38,7 +38,7 @@ class Solver(object):
 
     def build_model(self):
         self.net = build_model()
-        if self.config.mode == 'train': self.loss = Loss(self.config.contour_th)
+        if self.config.mode == 'train': self.loss = build_loss(self.config.space)
         if self.config.cuda: self.net = self.net.cuda()
         if self.config.cuda and self.config.mode == 'train': self.loss = self.loss.cuda()
         self.net.train()
@@ -51,9 +51,6 @@ class Solver(object):
     def update_lr(self, lr):
         for param_group in self.optimizer.param_groups:
             param_group['lr'] = lr
-
-    def clip(self, y):
-        return torch.clamp(y, 0.0, 1.0)
 
     def eval_mae(self, y_pred, y):
         return torch.abs(y_pred - y).mean()
@@ -128,7 +125,6 @@ class Solver(object):
                 loss = iou_loss + sail_loss
                 loss.backward()
                 utils.clip_grad_norm(self.net.parameters(), self.config.clip_gradient)
-                utils.clip_grad_norm(self.loss.parameters(), self.config.clip_gradient)
                 self.optimizer.step()
                 loss_epoch += loss.cpu().data[0]
                 print('epoch: [%d/%d], iter: [%d/%d], loss: [%.4f]' % (

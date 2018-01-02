@@ -51,7 +51,7 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=1e-6)
     parser.add_argument('--clip_gradient', type=float, default=1.0)
     parser.add_argument('--cuda', type=bool, default=True)
-    parser.add_argument('--contour_th', type=float, default=1.5)
+    # parser.add_argument('--contour_th', type=float, default=1.5)
 
     # Training settings
     parser.add_argument('--vgg', type=str, default=vgg_path)
@@ -68,6 +68,7 @@ if __name__ == '__main__':
     parser.add_argument('--epoch_save', type=int, default=20)
     parser.add_argument('--epoch_show', type=int, default=1)
     parser.add_argument('--pre_trained', type=str, default=None)
+    parser.add_argument('--space', type=bool, default=True)
 
     # Testing settings
     parser.add_argument('--test_path', type=str, default=test_path)

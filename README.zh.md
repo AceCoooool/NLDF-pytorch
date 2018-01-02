@@ -1,7 +1,7 @@
 # NLFD
 [English](./README.md)
 
-基于Pytorch的非官方版本实现： [Non-Local Deep Features for Salient Object Detection](https://sites.google.com/view/zhimingluo/nldf).（未完）
+基于Pytorch的非官方版本实现： [Non-Local Deep Features for Salient Object Detection](https://sites.google.com/view/zhimingluo/nldf).
 
 <p align="center"><img width="100%" src="png/example.png" /></p>
 
@@ -11,6 +11,7 @@
 
 1. 数据集（个人没找到MSRA-B的图片）
 2. 网络结构上的一些不同：此处采用最后输出为单个概率图，官方版本中是两个互异的概率图
+3. 增加了“面积重合率”，原论文中是“边缘重合率”（后续会实验两者结合的情况）
 
 ## 依赖库
 
@@ -48,24 +49,28 @@ cd ..
 
 注：此处个人直接采用torchvision里面训练好的VGG
 
-### 4. 训练
+### 4. 示例
 
 ```shell
-python main.py --mode='train' --train_path='you_data' --label_path='you_label' --batch_size=8 --visdom=True
+python demo.py --demo_img='your_picture' --trained_model='pre_trained pth' --cuda=True
+```
+
+注：
+
+1. 默认参数：下载[训练好的模型](https://drive.google.com/file/d/10cnWpqABT6MRdTO0p17hcHornMs6ggQL/view?usp=sharing)并复制到`weights`文件夹下
+2. 示例图片：默认采用`png/demo.jpg`
+
+### 5. 训练
+
+```shell
+python main.py --mode='train' --train_path='you_data' --label_path='you_label' --batch_size=8 --visdom=True --space=True
 ```
 
 注：
 
 1. `--val=True`：训练阶段开启validation. 你可以将部分训练集作为验证集。同时提供验证集的路径
 2. `you_data, you_label` ：关于第2步中数据集的路径
-
-### 5. 示例
-
-```shell
-python demo.py --demo_img='your_picture' --trained_model='pre_trained pth' --cuda=True
-```
-
-注：这里采用的`pre_trained.pth`来自第4步训练好的模型
+3. `--space`：选择area-IOU或者boundary-IOU
 
 ### 6. 测试
 
@@ -75,6 +80,12 @@ python main.py --mode='test', --test_path='you_data' --test_label='your_label' -
 
 注：目前提供的版本不是标准的测试方式（采用了缩放后的图片和标签），以及max f-measure存在问题
 
-## 训练好的模型
+## Bug
 
-下述仅给出一个迭代了较多轮的结果：[pretrained_model](https://drive.google.com/file/d/17ZpXi9YKTgPeNepvohNyPfnALYhXsC2d/view?usp=sharing)
+1. 如果采用boundary-iou容易出现`inf`的情况：需要将学习率调整到很小，如`1e-10`
+2. 可能还存在数值问题
+3. GradLayer层可能还存在bug
+
+
+
+如有任何问题，欢迎在issue中提问～

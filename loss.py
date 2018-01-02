@@ -22,16 +22,14 @@ class GradLayer(nn.Module):
         return torch.sqrt(torch.pow(x1, 2) + torch.pow(x2, 2))
 
 
-class Loss(nn.Module):
+class Loss_boundary(nn.Module):
     def __init__(self, contour_th):
         super(Loss, self).__init__()
         self.cth = contour_th
         self.gradlayer = GradLayer()
 
     def forward(self, x, label):
-        # TODO: reasonable to use tanh ?
-        # prob_grad = F.tanh(self.gradlayer(x))
-        prob_grad = self.gradlayer(x)
+        prob_grad = F.tanh(self.gradlayer(x))
         label_grad = torch.gt(self.gradlayer(label), self.cth).float()
         inter = torch.sum(prob_grad * label_grad)
         union = torch.pow(prob_grad, 2).sum() + torch.pow(label_grad, 2).sum()
@@ -40,4 +38,23 @@ class Loss(nn.Module):
         boundary_loss = (1 - 2 * (inter + 1) / (union + 1)) if inter.data[0] > 0 else 0
         sailency_loss = F.binary_cross_entropy(x, label)
         return boundary_loss, sailency_loss
+
+
+class Loss_space(nn.Module):
+    def __init__(self):
+        super(Loss_space, self).__init__()
+
+    def forward(self, x, label):
+        inter = (x * label).sum()
+        union = x.sum() + label.sum()
+        dice_loss = 1 - 2 * (inter + 1) / (union + 1)
+        sail_loss = F.binary_cross_entropy(x, label)
+        return dice_loss, sail_loss
+
+
+def build_loss(space=True):
+    if space:
+        return Loss_space()
+    else:
+        return Loss_boundary(1.5)
 
