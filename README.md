@@ -20,6 +20,23 @@ Some thing difference:
 - [torchvision](http://pytorch.org/)
 - [visdom](https://github.com/facebookresearch/visdom) (optional for visualization)
 
+## Results
+
+The information of Loss:
+
+![](./png/loss.png)
+
+Performance:
+
+| Dataset | max $F_{\beta}$(paper) | MAE(paper) | max $F_{\beta}$(here) | MAE(here) |
+| :-----: | :--------------------: | :--------: | :-------------------: | :-------: |
+|  ECSSD  |         0.905          |   0.063    |        0.9830         |  0.0375   |
+
+Note: 
+
+1. This reproduction use area IOU, and original paper use boundary IOU
+2. it's unfairness to this compare. (Different training data, I can not find the dataset use in original paper )
+
 ## Usage
 
 ### 1. Clone the repository
@@ -76,7 +93,9 @@ Note:
 python main.py --mode='test', --test_path='you_data' --test_label='your_label' --batch_size=1 --model='your_trained_model'
 ```
 
-Note: It's a scale version (image and label is resized) of test.
+Note:
+
+1. use the same evaluation (this is a reproduction from original achievement)
 
 ## Bug
 

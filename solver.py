@@ -58,19 +58,15 @@ class Solver(object):
     def eval_mae(self, y_pred, y):
         return torch.abs(y_pred - y).mean()
 
-    def f_measure(self, y_pred, y, threshold):
-        y_pred = (y_pred >= threshold).float()
-        y_flip, y_pred_flip = (y < 0.5).float(), (y < 0.5).float()
-        tp, fp, fn = (y_pred * y).sum(), (y_pred * y_flip).sum(), (y_pred_flip * y).sum()
-        prec, recall = tp / (tp + fp), tp / (tp + fn)
-        return (1 + self.beta ** 2) * (prec * recall) / (self.beta ** 2 * prec + recall)
-
-    def eval_fmeasure(self, y_pred, y):
-        max_f = self.f_measure(y_pred, y, 0.0)
-        for i in range(1, 11, 1):
-            f = self.f_measure(y_pred, y, i * 0.1)
-            max_f = f if (f > max_f).data[0] else max_f
-        return max_f
+    # TODO: write a more efficient version
+    def eval_pr(self, y_pred, y, num):
+        prec, recall = torch.zeros(num), torch.zeros(num)
+        thlist = torch.linspace(0, 1 - 1e-10, num)
+        for i in range(num):
+            y_temp = (y_pred >= thlist[i]).float()
+            tp = (y_temp * y).sum()
+            prec[i], recall[i] = tp / (y_temp.sum() + 1e-20), tp / y.sum()
+        return prec, recall
 
     def validation(self):
         avg_mae = 0.0
@@ -85,23 +81,27 @@ class Solver(object):
         self.net.train()
         return avg_mae / len(self.val_loader)
 
-    def test(self):
-        avg_mae, avg_fmeasure = 0.0, 0.0
+    def test(self, num):
+        avg_mae, img_num = 0.0, len(self.test_loader)
+        avg_prec, avg_recall = torch.zeros(num), torch.zeros(num)
         for i, data_batch in enumerate(self.test_loader):
             images, labels = data_batch
-            images, labels = Variable(images, volatile=True), Variable(labels, volatile=True)
+            shape = labels.size()[2:]
+            images = Variable(images, volatile=True)
             if self.config.cuda:
-                images, labels = images.cuda(), labels.cuda()
-            prob_pred = F.upsample(self.net(images), scale_factor=2, mode='bilinear')
-            mae = self.eval_mae(prob_pred, labels).cpu().data[0]
-            fmeasure = self.eval_fmeasure(prob_pred, labels).cpu().data[0]
-            print("[%d] mae: %.4f, fmeasure: %.2f" % (i, mae, fmeasure))
-            print("[%d] mae: %.4f, fmeasure: %.2f" % (i, mae, fmeasure), file=self.test_output)
+                images = images.cuda()
+            prob_pred = F.upsample(self.net(images), size=shape, mode='bilinear').cpu().data
+            mae = self.eval_mae(prob_pred, labels)
+            prec, recall = self.eval_pr(prob_pred, labels, num)
+            print("[%d] mae: %.4f" % (i, mae))
+            print("[%d] mae: %.4f" % (i, mae), file=self.test_output)
             avg_mae += mae
-            avg_fmeasure += fmeasure
-        avg_mae, avg_fmeasure = avg_mae / len(self.test_loader), avg_fmeasure / len(self.test_loader)
-        print('average mae: %.4f, average fmeasure: %.2f' % (avg_mae, avg_fmeasure))
-        print('average mae: %.4f, average fmeasure: %.2f' % (avg_mae, avg_fmeasure), file=self.test_output)
+            avg_prec, avg_recall = avg_prec + prec, avg_recall + recall
+        avg_mae, avg_prec, avg_recall = avg_mae / img_num, avg_prec / img_num, avg_recall / img_num
+        score = (1 + self.beta ** 2) * avg_prec * avg_recall / (self.beta ** 2 * avg_prec + avg_recall)
+        score[score != score] = 0  # delete the nan
+        print('average mae: %.4f, max fmeasure: %.4f' % (avg_mae, score.max()))
+        print('average mae: %.4f, max fmeasure: %.4f' % (avg_mae, score.max()), file=self.test_output)
 
     def train(self):
         x = torch.FloatTensor(self.config.batch_size, self.config.n_color, self.config.img_size, self.config.img_size)
@@ -127,6 +127,7 @@ class Solver(object):
                 loss = self.loss(y_pred, y)
                 loss.backward()
                 utils.clip_grad_norm(self.net.parameters(), self.config.clip_gradient)
+                # utils.clip_grad_norm(self.loss.parameters(), self.config.clip_gradient)
                 self.optimizer.step()
                 loss_epoch += loss.cpu().data[0]
                 print('epoch: [%d/%d], iter: [%d/%d], loss: [%.4f]' % (
@@ -153,3 +154,4 @@ class Solver(object):
             if (epoch + 1) % self.config.epoch_save == 0:
                 torch.save(self.net.state_dict(), '%s/models/epoch_%d.pth' % (self.config.save_fold, epoch + 1))
         torch.save(self.net.state_dict(), '%s/models/final.pth' % self.config.save_fold)
+

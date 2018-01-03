@@ -20,6 +20,23 @@
 - [torchvision](http://pytorch.org/)
 - [visdom](https://github.com/facebookresearch/visdom) (optional for visualization)
 
+## 复现情况
+
+迭代过程中的损失函数下降情况：
+
+![](./png/loss.png)
+
+性能：
+
+| Dataset | max $F_{\beta}$(paper) | MAE(paper) | max $F_{\beta}$(here) | MAE(here) |
+| :-----: | :--------------------: | :--------: | :-------------------: | :-------: |
+|  ECSSD  |         0.905          |   0.063    |        0.9830         |  0.0375   |
+
+说明：
+
+1. 此处复现采用的是面积IOU，原始论文采用的是边缘IOU
+2. 此处的比较是“不公平”，两者采用的数据集并不相同，且直接拿了训练集来测的指标（只是为了说明性能能够达到甚至超过原始paper）--- 原始论文中的数据集个人没找到。
+
 ## 使用说明
 
 ### 1. 复制仓库到本地
@@ -78,7 +95,9 @@ python main.py --mode='train' --train_path='you_data' --label_path='you_label' -
 python main.py --mode='test', --test_path='you_data' --test_label='your_label' --batch_size=1 --model='your_trained_model'
 ```
 
-注：目前提供的版本不是标准的测试方式（采用了缩放后的图片和标签），以及max f-measure存在问题
+注：
+
+1. 采用的指标和原始论文一致（改写自原代码）
 
 ## Bug
 

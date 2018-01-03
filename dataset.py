@@ -42,6 +42,7 @@ def get_loader(img_root, label_root, img_size, batch_size, mode='train', num_thr
         shuffle = True
     else:
         transform = transforms.Compose([
+            transforms.Resize((img_size, img_size)),
             transforms.ToTensor(),
             transforms.Lambda(lambda x: x - mean)
         ])
@@ -52,4 +53,3 @@ def get_loader(img_root, label_root, img_size, batch_size, mode='train', num_thr
     dataset = ImageData(img_root, label_root, transform, t_transform)
     data_loader = data.DataLoader(dataset=dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_thread)
     return data_loader
-

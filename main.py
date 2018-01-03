@@ -28,7 +28,7 @@ def main(config):
                                  num_thread=config.num_thread)
         if not os.path.exists(config.test_fold): os.mkdir(config.test_fold)
         test = Solver(None, None, test_loader, config)
-        test.test()
+        test.test(100)
     else:
         raise IOError("illegal input!!!")
 
@@ -43,6 +43,8 @@ if __name__ == '__main__':
     val_label = os.path.join(data_root, 'ECSSD/val_ground_truth_mask')
     test_path = os.path.join(data_root, 'ECSSD/test_images')
     test_label = os.path.join(data_root, 'ECSSD/test_ground_truth_mask')
+    # test_path = os.path.join(data_root, 'ECSSD/images')
+    # test_label = os.path.join(data_root, 'ECSSD/ground_truth_mask')
     parser = argparse.ArgumentParser()
 
     # Hyper-parameters
@@ -51,20 +53,21 @@ if __name__ == '__main__':
     parser.add_argument('--lr', type=float, default=1e-6)
     parser.add_argument('--clip_gradient', type=float, default=1.0)
     parser.add_argument('--cuda', type=bool, default=True)
-    # parser.add_argument('--contour_th', type=float, default=1.5)
+    parser.add_argument('--contour_th', type=float, default=1.5)
 
     # Training settings
     parser.add_argument('--vgg', type=str, default=vgg_path)
     parser.add_argument('--train_path', type=str, default=train_path)
     parser.add_argument('--label_path', type=str, default=label_path)
     parser.add_argument('--epoch', type=int, default=500)
-    parser.add_argument('--batch_size', type=int, default=8)
+    parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--val', type=bool, default=False)
     parser.add_argument('--val_path', type=str, default=val_path)
     parser.add_argument('--val_label', type=str, default=val_label)
     parser.add_argument('--num_thread', type=int, default=1)
     parser.add_argument('--load', type=str, default='')
     parser.add_argument('--save_fold', type=str, default='./results')
+    parser.add_argument('--epoch_val', type=int, default=5)
     parser.add_argument('--epoch_save', type=int, default=20)
     parser.add_argument('--epoch_show', type=int, default=1)
     parser.add_argument('--pre_trained', type=str, default=None)
@@ -74,7 +77,7 @@ if __name__ == '__main__':
     # Testing settings
     parser.add_argument('--test_path', type=str, default=test_path)
     parser.add_argument('--test_label', type=str, default=test_label)
-    parser.add_argument('--model', type=str, default='./results/trained/best.pth')
+    parser.add_argument('--model', type=str, default='./weights/best.pth')
     parser.add_argument('--test_fold', type=str, default='./results/test')
 
     # Misc
@@ -84,3 +87,4 @@ if __name__ == '__main__':
     config = parser.parse_args()
     if not os.path.exists(config.save_fold): os.mkdir(config.save_fold)
     main(config)
+
