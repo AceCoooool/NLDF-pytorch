@@ -28,9 +28,9 @@ The information of Loss:
 
 Performance:
 
-| Dataset | max $F_{\beta}$(paper) | MAE(paper) | max $F_{\beta}$(here) | MAE(here) |
-| :-----: | :--------------------: | :--------: | :-------------------: | :-------: |
-|  ECSSD  |         0.905          |   0.063    |        0.9830         |  0.0375   |
+| Dataset | max F(paper) | MAE(paper) | max F(here) | MAE(here) |
+| :-----: | :----------: | :--------: | :---------: | :-------: |
+|  ECSSD  |    0.905     |   0.063    |   0.9830    |  0.0375   |
 
 Note: 
 

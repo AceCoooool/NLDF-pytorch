@@ -123,7 +123,6 @@ class Solver(object):
                 x.data.resize_as_(images).copy_(images)
                 y.data.resize_as_(labels).copy_(labels)
                 y_pred = self.net(x)
-                self.eval_fmeasure(y_pred, y)
                 loss = self.loss(y_pred, y)
                 loss.backward()
                 utils.clip_grad_norm(self.net.parameters(), self.config.clip_gradient)
