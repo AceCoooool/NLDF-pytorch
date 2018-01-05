@@ -42,8 +42,8 @@ Note:
 ### 1. Clone the repository
 
 ```shell
-git clone git@github.com:AceCoooool/NLFD-Pytorch.git
-cd NLFD-Pytorch/
+git clone git@github.com:AceCoooool/NLFD-pytorch.git
+cd NLFD-pytorch/
 ```
 
 ### 2. Download the dataset
