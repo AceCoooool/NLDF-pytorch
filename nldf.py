@@ -49,9 +49,9 @@ def extra_layer(vgg, cfg):
     return vgg, feat_layers, pool_layers
 
 
-class NLFD(nn.Module):
+class NLDF(nn.Module):
     def __init__(self, base, feat_layers, pool_layers):
-        super(NLFD, self).__init__()
+        super(NLDF, self).__init__()
         self.pos = [4, 9, 16, 23, 30]
         self.base = nn.ModuleList(base)
         self.feat = nn.ModuleList(feat_layers)
@@ -76,16 +76,16 @@ class NLFD(nn.Module):
                     self.pool[k](torch.cat([sources[k][0], sources[k][1], out], dim=1)), inplace=True)
 
         score = self.conv_g(self.glob(x)) + self.conv_l(out)
-        prob = F.sigmoid(score)
+        prob = torch.sigmoid(score)
         return prob
 
 
 def build_model():
-    return NLFD(*extra_layer(vgg(base['352'], 3), extra['352']))
+    return NLDF(*extra_layer(vgg(base['352'], 3), extra['352']))
 
 
 def xavier(param):
-    init.xavier_uniform(param)
+    init.xavier_uniform_(param)
 
 
 def weights_init(m):

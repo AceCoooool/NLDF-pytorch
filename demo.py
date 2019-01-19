@@ -5,7 +5,7 @@ from PIL import Image
 from torch.autograd import Variable
 import numpy as np
 from torchvision import transforms
-from nlfd import build_model
+from nldf import build_model
 
 
 def demo(model_path, img_path, cuda):

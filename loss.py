@@ -41,5 +41,5 @@ class Loss(nn.Module):
             inter = torch.sum(prob_grad * label_grad)
             union = torch.pow(prob_grad, 2).sum() + torch.pow(label_grad, 2).sum()
             boundary_loss = (1 - 2 * (inter + 1) / (union + 1))
-            loss += self.ratio * boundary_loss
+            loss = loss + self.ratio * boundary_loss
         return loss

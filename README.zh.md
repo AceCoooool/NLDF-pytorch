@@ -5,13 +5,13 @@
 
 <p align="center"><img width="100%" src="png/example.png" /></p>
 
-官方Tensorflow版本链接: [NLFD](https://github.com/zhimingluo/NLDF)
+官方Tensorflow版本链接: [NLDF](https://github.com/zhimingluo/NLDF)
 
 此实现的几点改动:
 
-1. 数据集（个人没找到MSRA-B的图片）
+1. ~~数据集（个人没找到MSRA-B的图片）~~
 2. 网络结构上的一些不同：此处采用最后输出为单个概率图，官方版本中是两个互异的概率图
-3. 增加了“面积重合率”，原论文中是“边缘重合率” （提高了参数可同时选择两者）
+3. 增加了“面积重合率”，原论文中是“边缘重合率” （可同时选择两者）
 
 ## 依赖库
 

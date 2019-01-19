@@ -2,9 +2,8 @@ import torch
 from collections import OrderedDict
 from torch.nn import utils, functional as F
 from torch.optim import Adam
-from torch.autograd import Variable
 from torch.backends import cudnn
-from nlfd import build_model, weights_init
+from nldf import build_model, weights_init
 from loss import Loss
 from tools.visual import Viz_visdom
 
@@ -17,8 +16,12 @@ class Solver(object):
         self.config = config
         self.mean = torch.Tensor([123.68, 116.779, 103.939]).view(3, 1, 1) / 255
         self.beta = 0.3
+        self.device = torch.device('cpu')
+        if self.config.cuda:
+            cudnn.benchmark = True
+            self.device = torch.device('cuda')
         if config.visdom:
-            self.visual = Viz_visdom("NLFD", 1)
+            self.visual = Viz_visdom("NLDF", 1)
         self.build_model()
         if self.config.pre_trained: self.net.load_state_dict(torch.load(self.config.pre_trained))
         if config.mode == 'train':
@@ -39,14 +42,14 @@ class Solver(object):
     def build_model(self):
         self.net = build_model()
         if self.config.mode == 'train': self.loss = Loss(self.config.area, self.config.boundary)
-        if self.config.cuda: self.net = self.net.cuda()
+        self.net = self.net.to(self.device)
         if self.config.cuda and self.config.mode == 'train': self.loss = self.loss.cuda()
         self.net.train()
         self.net.apply(weights_init)
         if self.config.load == '': self.net.base.load_state_dict(torch.load(self.config.vgg))
         if self.config.load != '': self.net.load_state_dict(torch.load(self.config.load))
         self.optimizer = Adam(self.net.parameters(), self.config.lr)
-        self.print_network(self.net, 'NLFD')
+        self.print_network(self.net, 'NLDF')
 
     def update_lr(self, lr):
         for param_group in self.optimizer.param_groups:
@@ -72,12 +75,11 @@ class Solver(object):
         avg_mae = 0.0
         self.net.eval()
         for i, data_batch in enumerate(self.val_loader):
-            images, labels = data_batch
-            images, labels = Variable(images, volatile=True), Variable(labels, volatile=True)
-            if self.config.cuda:
-                images, labels = images.cuda(), labels.cuda()
-            prob_pred = self.net(images)
-            avg_mae += self.eval_mae(prob_pred, labels).cpu().data[0]
+            with torch.no_grad():
+                images, labels = data_batch
+                images, labels = images.to(self.device), labels.to(self.device)
+                prob_pred = self.net(images)
+            avg_mae += self.eval_mae(prob_pred, labels).cpu().item()
         self.net.train()
         return avg_mae / len(self.val_loader)
 
@@ -85,12 +87,11 @@ class Solver(object):
         avg_mae, img_num = 0.0, len(self.test_loader)
         avg_prec, avg_recall = torch.zeros(num), torch.zeros(num)
         for i, data_batch in enumerate(self.test_loader):
-            images, labels = data_batch
-            shape = labels.size()[2:]
-            images = Variable(images, volatile=True)
-            if self.config.cuda:
-                images = images.cuda()
-            prob_pred = F.upsample(self.net(images), size=shape, mode='bilinear').cpu().data
+            with torch.no_grad():
+                images, labels = data_batch
+                shape = labels.size()[2:]
+                images = images.to(self.device)
+                prob_pred = F.interpolate(self.net(images), size=shape, mode='bilinear', align_corners=True).cpu()
             mae = self.eval_mae(prob_pred, labels)
             prec, recall = self.eval_pr(prob_pred, labels, num)
             print("[%d] mae: %.4f" % (i, mae))
@@ -104,12 +105,6 @@ class Solver(object):
         print('average mae: %.4f, max fmeasure: %.4f' % (avg_mae, score.max()), file=self.test_output)
 
     def train(self):
-        x = torch.FloatTensor(self.config.batch_size, self.config.n_color, self.config.img_size, self.config.img_size)
-        y = torch.FloatTensor(self.config.batch_size, self.config.n_color, self.config.img_size, self.config.img_size)
-        if self.config.cuda:
-            cudnn.benchmark = True
-            x, y = x.cuda(), y.cuda()
-        x, y = Variable(x), Variable(y)
         iter_num = len(self.train_loader.dataset) // self.config.batch_size
         best_mae = 1.0 if self.config.val else None
         for epoch in range(self.config.epoch):
@@ -117,22 +112,18 @@ class Solver(object):
             for i, data_batch in enumerate(self.train_loader):
                 if (i + 1) > iter_num: break
                 self.net.zero_grad()
-                images, labels = data_batch
-                if self.config.cuda:
-                    images, labels = images.cuda(), labels.cuda()
-                x.data.resize_as_(images).copy_(images)
-                y.data.resize_as_(labels).copy_(labels)
+                x, y = data_batch
+                x, y = x.to(self.device), y.to(self.device)
                 y_pred = self.net(x)
                 loss = self.loss(y_pred, y)
                 loss.backward()
-                utils.clip_grad_norm(self.net.parameters(), self.config.clip_gradient)
-                # utils.clip_grad_norm(self.loss.parameters(), self.config.clip_gradient)
+                utils.clip_grad_norm_(self.net.parameters(), self.config.clip_gradient)
                 self.optimizer.step()
-                loss_epoch += loss.cpu().data[0]
+                loss_epoch += loss.cpu().item()
                 print('epoch: [%d/%d], iter: [%d/%d], loss: [%.4f]' % (
-                    epoch, self.config.epoch, i, iter_num, loss.cpu().data[0]))
+                    epoch, self.config.epoch, i, iter_num, loss.cpu().item()))
                 if self.config.visdom:
-                    error = OrderedDict([('loss:', loss.cpu().data[0])])
+                    error = OrderedDict([('loss:', loss.cpu().item())])
                     self.visual.plot_current_errors(epoch, i / iter_num, error)
             if (epoch + 1) % self.config.epoch_show == 0:
                 print('epoch: [%d/%d], epoch_loss: [%.4f]' % (epoch, self.config.epoch, loss_epoch / iter_num),
@@ -140,8 +131,8 @@ class Solver(object):
                 if self.config.visdom:
                     avg_err = OrderedDict([('avg_loss', loss_epoch / iter_num)])
                     self.visual.plot_current_errors(epoch, i / iter_num, avg_err, 1)
-                    img = OrderedDict([('origin', self.mean + images.cpu()[0]), ('label', labels.cpu()[0][0]),
-                                       ('pred_label', y_pred.cpu().data[0][0])])
+                    img = OrderedDict([('origin', self.mean + x.cpu()[0]), ('label', y.cpu()[0][0]),
+                                       ('pred_label', y_pred.cpu()[0][0])])
                     self.visual.plot_current_img(img)
             if self.config.val and (epoch + 1) % self.config.epoch_val == 0:
                 mae = self.validation()
@@ -153,4 +144,3 @@ class Solver(object):
             if (epoch + 1) % self.config.epoch_save == 0:
                 torch.save(self.net.state_dict(), '%s/models/epoch_%d.pth' % (self.config.save_fold, epoch + 1))
         torch.save(self.net.state_dict(), '%s/models/final.pth' % self.config.save_fold)
-

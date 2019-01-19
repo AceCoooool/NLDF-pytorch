@@ -1,22 +1,22 @@
-# NLFD
+# NLDF
 [中文说明](./README.zh.md)
 
 An unofficial implementation of [Non-Local Deep Features for Salient Object Detection](https://sites.google.com/view/zhimingluo/nldf).
 
 <p align="center"><img width="100%" src="png/example.png" /></p>
 
-The official Tensorflow version: [NLFD](https://github.com/zhimingluo/NLDF)
+The official Tensorflow version: [NLDF](https://github.com/zhimingluo/NLDF)
 
 Some thing difference:
 
-1. dataset
+1. ~~dataset~~
 2. score with one channel, rather than two channels
 3. Dice IOU: boundary version and area version
 
 ## Prerequisites
 
 - [Python 3](https://www.continuum.io/downloads)
-- [Pytorch 0.3.0](http://pytorch.org/)
+- [Pytorch 1.0](http://pytorch.org/)
 - [torchvision](http://pytorch.org/)
 - [visdom](https://github.com/facebookresearch/visdom) (optional for visualization)
 
@@ -30,20 +30,21 @@ Performance:
 
 | Dataset | max F(paper) | MAE(paper) | max F(here) | MAE(here) |
 | :-----: | :----------: | :--------: | :---------: | :-------: |
-|  ECSSD  |    0.905     |   0.063    |   0.9830    |  0.0375   |
+| MSRA-B  |    0.911     |   0.048    |   0.9006    |  0.0592   |
 
 Note: 
 
-1. This reproduction use area IOU, and original paper use boundary IOU
-2. it's unfairness to this compare. (Different training data, I can not find the dataset use in original paper )
+1. only training 200 epoch, larger epoch may nearly the original paper
+2. This reproduction use area IOU, and original paper use boundary IOU
+3. ~~it's unfairness to this compare. (Different training data, I can not find the dataset use in original paper )~~
 
 ## Usage
 
 ### 1. Clone the repository
 
 ```shell
-git clone git@github.com:AceCoooool/NLFD-pytorch.git
-cd NLFD-pytorch/
+git clone git@github.com:AceCoooool/NLDF-pytorch.git
+cd NLDF-pytorch/
 ```
 
 ### 2. Download the dataset
